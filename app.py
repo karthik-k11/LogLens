@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 
 
 app = Flask(__name__)
@@ -7,6 +7,16 @@ app = Flask(__name__)
 @app.route("/")
 def home():
     return "LogLens is running!"
+
+
+@app.route("/upload", methods=["POST"])
+def upload_log():
+    file = request.files.get("file")
+
+    if not file:
+        return "No file uploaded", 400
+
+    return f"Received file: {file.filename}"
 
 
 if __name__ == "__main__":
