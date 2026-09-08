@@ -16,7 +16,9 @@ def upload_log():
     if not file:
         return "No file uploaded", 400
 
-    return f"Received file: {file.filename}"
+    content = file.read().decode("utf-8")
+
+    return content
 
 
 if __name__ == "__main__":
