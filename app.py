@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template
-
+from log_parser import parse_logs
 
 app = Flask(__name__)
 
@@ -18,7 +18,9 @@ def upload_log():
 
     content = file.read().decode("utf-8")
 
-    return content
+    logs = parse_logs(content)
+
+    return str(logs)
 
 
 if __name__ == "__main__":

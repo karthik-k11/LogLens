@@ -17,10 +17,24 @@ def parse_line(line):
         "level": match.group("level"),
         "message": match.group("message"),
     }
+def parse_logs(content):
+    logs = []
+
+    for line in content.splitlines():
+        parsed = parse_line(line)
+
+        if parsed:
+            logs.append(parsed)
+
+    return logs
 
 if __name__ == "__main__":
-    test_line = "2026-09-08 10:00:00 ERROR Database connection failed"
+    test_content = """2026-09-08 10:00:00 INFO Application started
+2026-09-08 10:01:00 WARNING Memory usage is high
+2026-09-08 10:02:00 ERROR Database connection failed
+2026-09-08 10:03:00 INFO Application stopped"""
 
-    result = parse_line(test_line)
+    result = parse_logs(test_content)
 
-    print(result)
+    for log in result:
+        print(log)
