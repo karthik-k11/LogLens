@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template
 from log_parser import parse_logs
+from metrics import count_levels
 
 app = Flask(__name__)
 
@@ -20,7 +21,9 @@ def upload_log():
 
     logs = parse_logs(content)
 
-    return str(logs)
+    counts = count_levels(logs)
+
+    return str(counts)
 
 
 if __name__ == "__main__":
