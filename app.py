@@ -23,7 +23,7 @@ def upload_log():
 
     counts = count_levels(logs)
 
-    return str(counts)
+    return render_template("index.html", counts=counts)
 
 
 if __name__ == "__main__":
