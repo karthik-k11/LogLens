@@ -59,3 +59,14 @@ def group_messages(logs):
 
     return groups
 
+if __name__ == "__main__":
+    test_content = """2026-09-08 10:00:00 ERROR Database connection failed
+2026-09-08 10:01:00 ERROR Database connection failed
+2026-09-08 10:02:00 ERROR Server connection failed
+2026-09-08 10:03:00 INFO Application started"""
+
+    logs = parse_logs(test_content)
+
+    result = group_messages(logs)
+
+    print(result)
