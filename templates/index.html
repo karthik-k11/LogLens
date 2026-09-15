@@ -22,6 +22,16 @@
         <p>ERROR: {{ counts["ERROR"] }}</p>
         <p>DEBUG: {{ counts["DEBUG"] }}</p>
     {% endif %}
+    {% if incidents %}
+        <h2>Incidents</h2>
+
+        {% for incident in incidents %}
+            <p>
+                {{ incident["level"] }} -
+                {{ incident["message"] }}
+            </p>
+        {% endfor %}
+    {% endif %}
 
 </body>
 </html>
