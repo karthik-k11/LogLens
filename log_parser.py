@@ -28,13 +28,33 @@ def parse_logs(content):
 
     return logs
 
+def search_logs(logs, keyword):
+    results = []
+
+    for log in logs:
+        if keyword.lower() in log["message"].lower():
+            results.append(log)
+
+    return results
+
+def filter_by_level(logs, level):
+    results = []
+
+    for log in logs:
+        if log["level"] == level:
+            results.append(log)
+
+    return results
+
 if __name__ == "__main__":
     test_content = """2026-09-08 10:00:00 INFO Application started
 2026-09-08 10:01:00 WARNING Memory usage is high
 2026-09-08 10:02:00 ERROR Database connection failed
-2026-09-08 10:03:00 INFO Application stopped"""
+2026-09-08 10:03:00 ERROR Server connection failed"""
 
-    result = parse_logs(test_content)
+    logs = parse_logs(test_content)
+
+    result = filter_by_level(logs, "ERROR")
 
     for log in result:
         print(log)
