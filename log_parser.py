@@ -46,15 +46,16 @@ def filter_by_level(logs, level):
 
     return results
 
-if __name__ == "__main__":
-    test_content = """2026-09-08 10:00:00 INFO Application started
-2026-09-08 10:01:00 WARNING Memory usage is high
-2026-09-08 10:02:00 ERROR Database connection failed
-2026-09-08 10:03:00 ERROR Server connection failed"""
+def group_messages(logs):
+    groups = {}
 
-    logs = parse_logs(test_content)
+    for log in logs:
+        message = log["message"]
 
-    result = filter_by_level(logs, "ERROR")
+        if message not in groups:
+            groups[message] = 0
 
-    for log in result:
-        print(log)
+        groups[message] += 1
+
+    return groups
+
