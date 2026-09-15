@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template
 from log_parser import parse_logs
 from metrics import count_levels
+from detector import detect_incidents
 
 app = Flask(__name__)
 
