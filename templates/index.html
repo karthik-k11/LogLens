@@ -14,6 +14,8 @@
         <input type="file" name="file" accept=".log,.txt" required>
         <button type="submit">Upload Log</button>
     </form>
+
+
     {% if counts %}
         <h2>Log Summary</h2>
 
@@ -22,6 +24,8 @@
         <p>ERROR: {{ counts["ERROR"] }}</p>
         <p>DEBUG: {{ counts["DEBUG"] }}</p>
     {% endif %}
+
+
     {% if incidents %}
         <h2>Incidents</h2>
 
@@ -30,6 +34,26 @@
                 {{ incident["level"] }} -
                 {{ incident["message"] }}
             </p>
+        {% endfor %}
+    {% endif %}
+
+
+    {% if history %}
+        <h2>Analysis History</h2>
+
+        {% for record in history %}
+            <div>
+                <p>File: {{ record["filename"] }}</p>
+
+                <p>
+                    INFO: {{ record["info_count"] }} |
+                    WARNING: {{ record["warning_count"] }} |
+                    ERROR: {{ record["error_count"] }} |
+                    DEBUG: {{ record["debug_count"] }}
+                </p>
+            </div>
+
+            <hr>
         {% endfor %}
     {% endif %}
 
