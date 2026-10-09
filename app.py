@@ -3,6 +3,7 @@ from log_parser import parse_logs
 from metrics import count_levels
 from detector import detect_incidents
 from database import init_db, save_analysis, get_history
+from log_parser import group_messages
 
 app = Flask(__name__)
 
@@ -34,13 +35,16 @@ def upload_log():
 
     incidents = detect_incidents(logs)
 
+    groups = group_messages(logs)
+
     history = get_history()
 
     return render_template(
         "index.html",
         counts=counts,
         incidents=incidents,
-        history=history
+        history=history,
+        groups=groups
     )
 
 init_db()

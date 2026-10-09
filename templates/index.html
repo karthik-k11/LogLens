@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,16 +16,13 @@
         <button type="submit">Upload Log</button>
     </form>
 
-
     {% if counts %}
         <h2>Log Summary</h2>
-
         <p>INFO: {{ counts["INFO"] }}</p>
         <p>WARNING: {{ counts["WARNING"] }}</p>
         <p>ERROR: {{ counts["ERROR"] }}</p>
         <p>DEBUG: {{ counts["DEBUG"] }}</p>
     {% endif %}
-
 
     {% if incidents %}
         <h2>Incidents</h2>
@@ -37,6 +35,17 @@
         {% endfor %}
     {% endif %}
 
+    {% if groups %}
+        <h2>Repeated Messages</h2>
+
+        {% for message, count in groups.items() %}
+            {% if count > 1 %}
+                <p>
+                    {{ message }} — Occurrences: {{ count }}
+                </p>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
 
     {% if history %}
         <h2>Analysis History</h2>
@@ -44,7 +53,6 @@
         {% for record in history %}
             <div>
                 <p>File: {{ record["filename"] }}</p>
-
                 <p>
                     INFO: {{ record["info_count"] }} |
                     WARNING: {{ record["warning_count"] }} |
@@ -52,7 +60,6 @@
                     DEBUG: {{ record["debug_count"] }}
                 </p>
             </div>
-
             <hr>
         {% endfor %}
     {% endif %}
