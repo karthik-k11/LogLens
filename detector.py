@@ -1,11 +1,15 @@
-def detect_incidents(logs):
+def detect_incidents(logs, limit=10):
     incidents = []
 
     for log in logs:
-        if log["level"] == "ERROR":
-            incidents.append(log)
+        if log.get("level") == "ERROR":
+            incidents.append({
+                "level": "ERROR",
+                "message": log.get("message", "Unknown error"),
+                "timestamp": log.get("timestamp", "Unknown time"),
+            })
 
-    return incidents
+    return incidents[:limit]
 
 
 if __name__ == "__main__":
@@ -13,10 +17,8 @@ if __name__ == "__main__":
         {"level": "INFO", "message": "Application started"},
         {"level": "ERROR", "message": "Database connection failed"},
         {"level": "WARNING", "message": "Memory usage is high"},
-        {"level": "ERROR", "message": "Server connection failed"}
+        {"level": "ERROR", "message": "Server connection failed"},
     ]
 
-    result = detect_incidents(test_logs)
-
-    for incident in result:
+    for incident in detect_incidents(test_logs):
         print(incident)
