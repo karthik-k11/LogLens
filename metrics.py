@@ -3,12 +3,11 @@ def count_levels(logs):
         "INFO": 0,
         "WARNING": 0,
         "ERROR": 0,
-        "DEBUG": 0
+        "DEBUG": 0,
     }
 
     for log in logs:
-        level = log["level"]
-
+        level = str(log.get("level", "")).upper().strip()
         if level in counts:
             counts[level] += 1
 
@@ -21,9 +20,7 @@ if __name__ == "__main__":
         {"level": "ERROR"},
         {"level": "INFO"},
         {"level": "WARNING"},
-        {"level": "ERROR"}
+        {"level": "ERROR"},
     ]
 
-    result = count_levels(test_logs)
-
-    print(result)
+    print(count_levels(test_logs))
