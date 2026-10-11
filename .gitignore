@@ -4,3 +4,4 @@ __pycache__/
 .env
 database/*.db
 loglens.db
+sample_browser_test.log
