@@ -1,180 +1,299 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LogLens</title>
+    <meta name="theme-color" content="#f5f6f3">
+    <title>LogLens — Local log workspace</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo-row">
-                <div class="logo-mark">L</div>
-                <h1>LogLens</h1>
-            </div>
-            <p class="subtitle">Analyze log files, detect incidents, and surface repeating patterns with a clean operational overview.</p>
+    <div class="app-shell">
+        <header class="topbar">
+            <a class="brand" href="{{ url_for('home') }}" aria-label="LogLens home">
+                <span class="brand-mark" aria-hidden="true">L</span>
+                <span class="brand-name">LogLens</span>
+            </a>
+            <div class="workspace-indicator"><span class="status-dot"></span> LOCAL WORKSPACE</div>
         </header>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash {{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <div class="grid">
-            <main class="panel upload-box">
-                <div class="badge">Log Intake</div>
-                <form action="/upload" method="POST" enctype="multipart/form-data">
-                    <div class="form-row">
-                        <input class="file-input" type="file" name="file" accept=".log,.txt,.out" required>
-                        <button type="submit">Analyze Log</button>
-                    </div>
-                </form>
-
-                {% if counts %}
-                    <div class="section">
-                        <h2>Log Summary</h2>
-                        <div class="summary-grid">
-                            <div class="metric info">
-                                <span class="metric-label">INFO</span>
-                                <span class="metric-value">{{ counts["INFO"] }}</span>
-                            </div>
-                            <div class="metric warning">
-                                <span class="metric-label">WARNING</span>
-                                <span class="metric-value">{{ counts["WARNING"] }}</span>
-                            </div>
-                            <div class="metric error">
-                                <span class="metric-label">ERROR</span>
-                                <span class="metric-value">{{ counts["ERROR"] }}</span>
-                            </div>
-                            <div class="metric debug">
-                                <span class="metric-label">DEBUG</span>
-                                <span class="metric-value">{{ counts["DEBUG"] }}</span>
-                            </div>
-                        </div>
+        <main class="workspace">
+            <section class="page-heading">
+                <div>
+                    <p class="eyebrow">LOG ANALYSIS</p>
+                    <h1>Make sense of your logs.</h1>
+                    <p class="page-intro">A clear view of what happened, what needs attention, and what keeps repeating.</p>
+                </div>
+                {% if filename %}
+                    <div class="active-file">
+                        <span class="active-file-label">CURRENT ANALYSIS</span>
+                        <span class="active-file-name" title="{{ filename }}">{{ filename }}</span>
                     </div>
                 {% endif %}
+            </section>
 
-                {% if filename %}
-                    <div class="section filter-panel">
-                        <h2>Filter Log Entries</h2>
-                        <form method="GET" action="/" class="filter-form">
-                            <div class="filter-row">
-                                <input type="text" name="keyword" value="{{ filter_keyword }}" placeholder="Search message text..." class="filter-input">
-                                <select name="level" class="filter-select">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-stack" role="status">
+                        {% for category, message in messages %}
+                            <div class="flash {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <section class="upload-panel" aria-labelledby="upload-title">
+                <div class="upload-copy">
+                    <div class="upload-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 id="upload-title">Start with a log file</h2>
+                        <p>Choose a plain-text log to see its key signals and entries.</p>
+                    </div>
+                </div>
+                <form action="{{ url_for('upload_log') }}" method="POST" enctype="multipart/form-data" class="upload-form">
+                    <label class="file-picker">
+                        <span class="visually-hidden">Choose a log file</span>
+                        <input class="file-input" type="file" name="file" accept=".log,.txt,.out" required>
+                    </label>
+                    <button class="button button-primary" type="submit">Analyze log <span aria-hidden="true">→</span></button>
+                </form>
+                <p class="upload-note">LOG, TXT, or OUT · UP TO 10 MB · PROCESSED ON THIS DEVICE</p>
+            </section>
+
+            {% if counts %}
+                <section class="metrics-grid" aria-label="Log summary">
+                    <article class="metric-card metric-total">
+                        <span class="metric-label">TOTAL ENTRIES</span>
+                        <span class="metric-value">{{ total_entries }}</span>
+                        <span class="metric-footnote">parsed from this file</span>
+                    </article>
+                    <article class="metric-card metric-info">
+                        <span class="metric-label">INFO</span>
+                        <span class="metric-value">{{ counts["INFO"] }}</span>
+                        <span class="metric-footnote">informational</span>
+                    </article>
+                    <article class="metric-card metric-warning">
+                        <span class="metric-label">WARNING</span>
+                        <span class="metric-value">{{ counts["WARNING"] }}</span>
+                        <span class="metric-footnote">needs attention</span>
+                    </article>
+                    <article class="metric-card metric-error">
+                        <span class="metric-label">ERROR</span>
+                        <span class="metric-value">{{ counts["ERROR"] }}</span>
+                        <span class="metric-footnote">potential incidents</span>
+                    </article>
+                    <article class="metric-card metric-debug">
+                        <span class="metric-label">DEBUG</span>
+                        <span class="metric-value">{{ counts["DEBUG"] }}</span>
+                        <span class="metric-footnote">diagnostic detail</span>
+                    </article>
+                </section>
+            {% endif %}
+
+            <div class="content-grid">
+                <section class="panel entries-panel" aria-labelledby="entries-title">
+                    {% if filename %}
+                        <div class="panel-heading">
+                            <div>
+                                <p class="eyebrow">YOUR FILE</p>
+                                <h2 id="entries-title">Log entries</h2>
+                            </div>
+                            <span class="entry-count">{{ filtered_count }} <span>of {{ total_entries }}</span></span>
+                        </div>
+
+                        <form method="GET" action="{{ url_for('home') }}" class="filter-form">
+                            <label class="search-field">
+                                <span class="visually-hidden">Search log messages</span>
+                                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                    <circle cx="8.8" cy="8.8" r="5.8" stroke="currentColor" stroke-width="1.5"/>
+                                    <path d="m13.2 13.2 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                                <input type="search" name="keyword" value="{{ filter_keyword }}" placeholder="Search messages">
+                            </label>
+                            <label class="select-field">
+                                <span class="visually-hidden">Filter by severity</span>
+                                <select name="level">
                                     <option value="ALL" {% if filter_level == 'ALL' %}selected{% endif %}>All levels</option>
-                                    <option value="INFO" {% if filter_level == 'INFO' %}selected{% endif %}>INFO</option>
-                                    <option value="WARNING" {% if filter_level == 'WARNING' %}selected{% endif %}>WARNING</option>
-                                    <option value="ERROR" {% if filter_level == 'ERROR' %}selected{% endif %}>ERROR</option>
-                                    <option value="DEBUG" {% if filter_level == 'DEBUG' %}selected{% endif %}>DEBUG</option>
+                                    <option value="INFO" {% if filter_level == 'INFO' %}selected{% endif %}>Info</option>
+                                    <option value="WARNING" {% if filter_level == 'WARNING' %}selected{% endif %}>Warning</option>
+                                    <option value="ERROR" {% if filter_level == 'ERROR' %}selected{% endif %}>Error</option>
+                                    <option value="DEBUG" {% if filter_level == 'DEBUG' %}selected{% endif %}>Debug</option>
                                 </select>
-                                <select name="sort_by" class="filter-select">
-                                    <option value="timestamp" {% if sort_by == 'timestamp' %}selected{% endif %}>Sort by time</option>
-                                    <option value="level" {% if sort_by == 'level' %}selected{% endif %}>Sort by level</option>
-                                    <option value="message" {% if sort_by == 'message' %}selected{% endif %}>Sort by message</option>
+                            </label>
+                            <label class="select-field">
+                                <span class="visually-hidden">Sort entries by</span>
+                                <select name="sort_by">
+                                    <option value="timestamp" {% if sort_by == 'timestamp' %}selected{% endif %}>Time</option>
+                                    <option value="level" {% if sort_by == 'level' %}selected{% endif %}>Severity</option>
+                                    <option value="message" {% if sort_by == 'message' %}selected{% endif %}>Message</option>
                                 </select>
-                                <select name="sort_order" class="filter-select">
+                            </label>
+                            <label class="select-field order-select">
+                                <span class="visually-hidden">Sort order</span>
+                                <select name="sort_order">
                                     <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>Newest first</option>
                                     <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>Oldest first</option>
                                 </select>
-                                <button type="submit">Apply</button>
-                                <a class="export-button" href="{{ url_for('export_logs', format='csv') }}">Export CSV</a>
-                                <a class="export-button" href="{{ url_for('export_logs', format='json') }}">Export JSON</a>
-                            </div>
+                            </label>
+                            <button class="button button-secondary" type="submit">Apply</button>
+                            {% if filter_keyword or filter_level != 'ALL' %}
+                                <a class="clear-link" href="{{ url_for('home') }}">Clear</a>
+                            {% endif %}
                         </form>
-                        <div class="filter-status">
-                            Showing {{ filtered_count }} of {{ total_entries }} entries from {{ filename }}
+
+                        <div class="table-scroll">
+                            {% if filtered_logs %}
+                                <table class="log-table">
+                                    <thead>
+                                        <tr><th scope="col">Severity</th><th scope="col">Timestamp</th><th scope="col">Message</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for log in filtered_logs %}
+                                            <tr>
+                                                <td><span class="severity severity-{{ log['level']|lower }}">{{ log["level"] }}</span></td>
+                                                <td class="timestamp">{{ log["timestamp"] }}</td>
+                                                <td class="log-message">{{ log["message"] }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            {% else %}
+                                <div class="empty-state">
+                                    <span class="empty-state-mark" aria-hidden="true">⌕</span>
+                                    <strong>No matching entries</strong>
+                                    <span>Try another search or clear the selected filters.</span>
+                                </div>
+                            {% endif %}
                         </div>
-                        {% if total_pages > 1 %}
-                            <div class="pagination">
-                                {% if page > 1 %}
-                                    <a href="/?page={{ page - 1 }}&keyword={{ filter_keyword }}&level={{ filter_level }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}">Previous</a>
-                                {% endif %}
-                                <span>Page {{ page }} of {{ total_pages }}</span>
-                                {% if page < total_pages %}
-                                    <a href="/?page={{ page + 1 }}&keyword={{ filter_keyword }}&level={{ filter_level }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}">Next</a>
-                                {% endif %}
+
+                        <div class="table-footer">
+                            <span>Showing {{ filtered_logs|length }} entries on this page</span>
+                            {% if total_pages > 1 %}
+                                <nav class="pagination" aria-label="Log entry pages">
+                                    {% if page > 1 %}
+                                        <a href="{{ url_for('home', page=page - 1, keyword=filter_keyword, level=filter_level, sort_by=sort_by, sort_order=sort_order) }}">← Previous</a>
+                                    {% endif %}
+                                    <span>{{ page }} / {{ total_pages }}</span>
+                                    {% if page < total_pages %}
+                                        <a href="{{ url_for('home', page=page + 1, keyword=filter_keyword, level=filter_level, sort_by=sort_by, sort_order=sort_order) }}">Next →</a>
+                                    {% endif %}
+                                </nav>
+                            {% endif %}
+                        </div>
+
+                        <div class="export-row">
+                            <span>Save these results</span>
+                            <a href="{{ url_for('export_logs', format='csv', keyword=filter_keyword, level=filter_level, sort_by=sort_by, sort_order=sort_order) }}">Download CSV <span aria-hidden="true">↗</span></a>
+                            <a href="{{ url_for('export_logs', format='json', keyword=filter_keyword, level=filter_level, sort_by=sort_by, sort_order=sort_order) }}">Download JSON <span aria-hidden="true">↗</span></a>
+                        </div>
+                    {% else %}
+                        <div class="welcome-state">
+                            <p class="eyebrow">A CLEARER VIEW OF YOUR LOGS</p>
+                            <h2 id="entries-title">Find the signal in the noise.</h2>
+                            <p>Drop in a log file to get a severity breakdown, searchable entries, repeated messages, and a focused list of errors.</p>
+                            <div class="format-example">
+                                <span>SUPPORTED LINE FORMAT</span>
+                                <code>2026-10-20 10:00:00 ERROR Connection failed</code>
                             </div>
+                        </div>
+                    {% endif %}
+                </section>
+
+                <aside class="sidebar">
+                    {% if filename %}
+                        <section class="panel insight-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">NEEDS A LOOK</p>
+                                    <h2>Incidents</h2>
+                                </div>
+                                <span class="small-count">{{ incidents|length }}</span>
+                            </div>
+                            {% if incidents %}
+                                <div class="insight-list">
+                                    {% for incident in incidents %}
+                                        <article class="incident-item">
+                                            <span class="incident-indicator"></span>
+                                            <div>
+                                                <span class="incident-time">{{ incident["timestamp"] }}</span>
+                                                <p>{{ incident["message"] }}</p>
+                                            </div>
+                                        </article>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="quiet-empty">No error entries in this file.</p>
+                            {% endif %}
+                            {% if counts["ERROR"] > incidents|length %}
+                                <p class="panel-footnote">Showing the first {{ incidents|length }} errors.</p>
+                            {% endif %}
+                        </section>
+
+                        <section class="panel insight-panel repeated-panel">
+                            <div class="panel-heading">
+                                <div>
+                                    <p class="eyebrow">RECURRING PATTERNS</p>
+                                    <h2>Repeated messages</h2>
+                                </div>
+                            </div>
+                            {% set repeated = groups.items()|selectattr('1', 'gt', 1)|list %}
+                            {% if repeated %}
+                                <div class="insight-list">
+                                    {% for message, count in repeated %}
+                                        <article class="repeat-item">
+                                            <span class="repeat-count">{{ count }}×</span>
+                                            <p>{{ message }}</p>
+                                        </article>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="quiet-empty">No repeated messages found.</p>
+                            {% endif %}
+                        </section>
+                    {% else %}
+                        <section class="panel local-note">
+                            <span class="local-note-icon" aria-hidden="true">⌂</span>
+                            <p class="eyebrow">PRIVATE BY DEFAULT</p>
+                            <h2>Your logs stay here.</h2>
+                            <p>LogLens runs on your computer. Your selected file is analyzed locally and is not sent to an online service.</p>
+                        </section>
+                    {% endif %}
+
+                    <section class="panel history-panel">
+                        <div class="panel-heading">
+                            <div>
+                                <p class="eyebrow">ON THIS DEVICE</p>
+                                <h2>Recent analyses</h2>
+                            </div>
+                            <span class="small-count">{{ history|length }}</span>
+                        </div>
+                        {% if history %}
+                            <div class="history-list">
+                                {% for record in history %}
+                                    <article class="history-item">
+                                        <span class="history-file-icon" aria-hidden="true">▤</span>
+                                        <div class="history-content">
+                                            <span class="history-name" title="{{ record['filename'] }}">{{ record["filename"] }}</span>
+                                            <span class="history-counts">
+                                                <span class="history-error">{{ record["error_count"] }} errors</span>
+                                                <span>{{ record["info_count"] + record["warning_count"] + record["error_count"] + record["debug_count"] }} entries</span>
+                                            </span>
+                                        </div>
+                                    </article>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="quiet-empty">Your recent files will appear here.</p>
                         {% endif %}
-                    </div>
-                {% endif %}
-
-                {% if filtered_logs %}
-                    <div class="section">
-                        <h2>Log Entries</h2>
-                        <div class="list">
-                            {% for log in filtered_logs %}
-                                <div class="list-item {{ log['level']|lower }}">
-                                    <strong>{{ log["level"] }}</strong>
-                                    <span>{{ log["timestamp"] }}</span>
-                                    <div class="message">{{ log["message"] }}</div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% elif filename %}
-                    <div class="section">
-                        <p class="empty-state">No log entries match the current filter.</p>
-                    </div>
-                {% endif %}
-
-                {% if incidents %}
-                    <div class="section">
-                        <h2>Incidents</h2>
-                        <div class="list">
-                            {% for incident in incidents %}
-                                <div class="list-item error">
-                                    <strong>{{ incident["level"] }}</strong>
-                                    <span>{{ incident["timestamp"] }}</span>
-                                    <div class="message">{{ incident["message"] }}</div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endif %}
-
-                {% if groups %}
-                    <div class="section">
-                        <h2>Repeated Messages</h2>
-                        <div class="list">
-                            {% for message, count in groups.items() %}
-                                {% if count > 1 %}
-                                    <div class="list-item warning">
-                                        <strong>{{ count }}x</strong>
-                                        <span>{{ message }}</span>
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endif %}
-            </main>
-
-            <aside class="panel">
-                <div class="badge">History</div>
-                {% if history %}
-                    <div class="list">
-                        {% for record in history %}
-                            <div class="history-item">
-                                <div class="history-meta">{{ record["filename"] }}</div>
-                                <div class="message">
-                                    INFO: {{ record["info_count"] }} |
-                                    WARNING: {{ record["warning_count"] }} |
-                                    ERROR: {{ record["error_count"] }} |
-                                    DEBUG: {{ record["debug_count"] }}
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="empty-state">No analyses yet. Upload a log file to begin.</p>
-                {% endif %}
-            </aside>
-        </div>
+                    </section>
+                </aside>
+            </div>
+            <footer class="app-footer"><span>LOGLENS</span><span>LOCAL LOG WORKSPACE</span></footer>
+        </main>
     </div>
 </body>
 </html>
