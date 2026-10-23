@@ -3,22 +3,23 @@ import io
 import json
 
 from flask import Flask, Response, flash, redirect, render_template, request, session, url_for
+from werkzeug.exceptions import RequestEntityTooLarge
+from werkzeug.utils import secure_filename
 
-from database import get_history, init_db, save_analysis
+from database import get_history, get_logs, init_db, save_analysis
 from detector import detect_incidents
 from log_parser import filter_by_level, group_messages, parse_logs, search_logs, sort_logs
 from metrics import count_levels
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "loglens-production-key"
+app.config.from_object("config.Config")
 
 
-def set_session_analysis(filename, logs, counts, incidents, groups):
+def set_session_analysis(analysis_id, filename, counts):
+    session.clear()
+    session["analysis_id"] = analysis_id
     session["last_filename"] = filename
-    session["last_logs"] = logs
     session["last_counts"] = counts
-    session["last_incidents"] = incidents
-    session["last_groups"] = groups
 
 
 def get_filtered_logs():
@@ -32,7 +33,8 @@ def get_filtered_logs():
         page = 1
     page_size = 25
 
-    logs = session.get("last_logs") or []
+    analysis_id = session.get("analysis_id")
+    logs = get_logs(analysis_id) if analysis_id is not None else []
     filtered_logs = list(logs)
     if keyword:
         filtered_logs = search_logs(filtered_logs, keyword)
@@ -53,15 +55,13 @@ def build_dashboard_context():
     history = get_history(limit=10)
     logs, paginated_logs, filtered_logs, keyword, level, sort_by, sort_order, page, total_pages = get_filtered_logs()
     counts = session.get("last_counts")
-    incidents = session.get("last_incidents")
-    groups = session.get("last_groups")
     filename = session.get("last_filename")
 
     return {
         "history": history,
         "counts": counts,
-        "incidents": incidents,
-        "groups": groups,
+        "incidents": detect_incidents(logs),
+        "groups": group_messages(logs),
         "filename": filename,
         "filtered_logs": paginated_logs,
         "filter_keyword": keyword,
@@ -72,7 +72,6 @@ def build_dashboard_context():
         "sort_order": sort_order,
         "page": page,
         "total_pages": total_pages,
-        "query_string": request.query_string.decode("utf-8"),
     }
 
 
@@ -83,15 +82,15 @@ def home():
 
 @app.route("/export")
 def export_logs():
-    filename = session.get("last_filename") or "loglens-export"
-    logs = session.get("last_logs") or []
-    _, _, filtered_logs, keyword, level, _, _, _, _ = get_filtered_logs()
+    filename = secure_filename(session.get("last_filename") or "") or "loglens-export"
+    _, _, filtered_logs, _, _, _, _, _, _ = get_filtered_logs()
 
     export_format = (request.args.get("format") or "csv").lower()
-    export_rows = filtered_logs if keyword or level != "ALL" else logs
+    if export_format not in {"csv", "json"}:
+        return Response("Unsupported export format. Use csv or json.", status=400, mimetype="text/plain")
 
     if export_format == "json":
-        payload = json.dumps(export_rows, indent=2)
+        payload = json.dumps(filtered_logs, indent=2)
         return Response(
             payload,
             mimetype="application/json",
@@ -102,7 +101,7 @@ def export_logs():
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=fieldnames)
     writer.writeheader()
-    for row in export_rows:
+    for row in filtered_logs:
         writer.writerow({
             "timestamp": row.get("timestamp", ""),
             "level": row.get("level", ""),
@@ -121,8 +120,14 @@ def export_logs():
 def upload_log():
     file = request.files.get("file")
 
-    if not file or file.filename == "":
+    if not file or not file.filename:
         flash("Please choose a log file before uploading.", "error")
+        return redirect(url_for("home"))
+
+    filename = secure_filename(file.filename)
+    extension = f".{filename.rsplit('.', 1)[1].lower()}" if "." in filename else ""
+    if not filename or extension not in app.config["ALLOWED_EXTENSIONS"]:
+        flash("Please upload a .log, .txt, or .out file.", "error")
         return redirect(url_for("home"))
 
     try:
@@ -137,11 +142,15 @@ def upload_log():
         return redirect(url_for("home"))
 
     counts = count_levels(logs)
-    incidents = detect_incidents(logs)
-    groups = group_messages(logs)
-    save_analysis(file.filename, counts)
-    set_session_analysis(file.filename, logs, counts, incidents, groups)
+    analysis_id = save_analysis(filename, counts, logs)
+    set_session_analysis(analysis_id, filename, counts)
 
+    return redirect(url_for("home"))
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(_error):
+    flash("The uploaded file is too large. Maximum file size is 10 MB.", "error")
     return redirect(url_for("home"))
 
 
@@ -149,4 +158,4 @@ init_db()
 
 
 if __name__ == "__main__":
-    app.run(debug=False, host="0.0.0.0", port=5000)
+    app.run(debug=False, host="127.0.0.1", port=5000)
