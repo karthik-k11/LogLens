@@ -7,7 +7,7 @@ LOG_PATTERN = re.compile(
 
 
 def parse_line(line):
-    cleaned = (line or "").strip()
+    cleaned = (line or "").lstrip("\ufeff").strip()
     if not cleaned:
         return None
 
