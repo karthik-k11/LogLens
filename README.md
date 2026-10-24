@@ -1,140 +1,226 @@
-LogLens
+# LogLens
 
-LogLens is a lightweight log analysis and incident detection tool built with Python and Flask. It allows users to upload log files, analyze severity levels, detect errors, group repeated messages, and store analysis history in SQLite.
+LogLens is a local log-inspection workspace built with Python and Flask. It helps developers analyze log files, review severity totals, search and sort entries, identify errors and repeated messages, and export results for further investigation.
 
-Features
+All log files are analyzed locally on your computer. Parsed entries and recent analysis summaries are stored in a local SQLite database, keeping the application simple and self-contained.
 
-- Upload ".log" and ".txt" files.
-- Parse timestamps, severity levels, and log messages.
-- Count logs by severity: "INFO", "WARNING", "ERROR", and "DEBUG".
-- Search log messages by keyword.
-- Filter logs by severity level.
-- Group repeated messages and count occurrences.
-- Detect incidents by identifying "ERROR" entries.
-- Store analysis summaries in SQLite.
-- View previous analysis history on the dashboard.
+## Features
 
-Technology Stack
+- **Local log analysis:** Analyze log files directly on your computer.
+- **Multiple file formats:** Upload `.log`, `.txt`, and `.out` files.
+- **Severity statistics:** View counts for INFO, WARNING, ERROR, and DEBUG entries.
+- **Log search:** Search entries by message text.
+- **Filtering and sorting:** Filter entries by severity and sort results.
+- **Error inspection:** Review detected error entries.
+- **Repeated message detection:** Identify messages that occur multiple times.
+- **Data export:** Export filtered log entries to CSV or JSON.
+- **Analysis history:** Review recent analysis summaries stored in SQLite.
+- **Pagination:** Navigate through parsed log entries.
+- **Automated tests:** Run the test suite using Python's built-in `unittest` framework.
 
-- Language: Python
-- Backend: Flask
-- Frontend: HTML
-- Database: SQLite
-- Parsing: Python regular expressions and file processing
+## Workflow Architecture
 
-Project Structure
+The diagram below illustrates the LogLens workflow, from log file upload and processing to database storage, analysis, filtering, and CSV/JSON export.
 
-LogLens/
-├── app.py
-├── log_parser.py
-├── detector.py
-├── database.py
-├── metrics.py
-├── config.py
-├── requirements.txt
-├── README.md
-├── .gitignore
-└── templates/
-    └── index.html
+![LogLens Workflow Architecture](screenshots/Loglens-workflow.png)
 
-Requirements
+## Screenshots
 
-- Python 3.10 or newer
-- pip
+### 1. Dashboard
 
-Installation and Setup
+The main interface for accessing LogLens and working with log files.
 
-1. Clone the Repository
+![LogLens Dashboard](screenshots/dashboard.png)
 
-git clone <your-repository-ssh-url>
-cd LogLens
+### 2. Log Analysis
 
-Replace "<your-repository-ssh-url>" with your repository's SSH URL.
+Review parsed log entries and analyze severity counts, errors, and repeated messages.
 
-2. Create a Virtual Environment
+![LogLens Analysis](screenshots/analysis.png)
 
+### 3. Search and Filtering
+
+Search log messages and narrow down entries to investigate specific events.
+
+![LogLens Search and Filtering](screenshots/search-and-filtering.png)
+
+## Tech Stack
+
+- **Language:** Python 3.10+
+- **Web Framework:** Flask
+- **Database:** SQLite
+- **Frontend:** HTML and CSS
+- **Testing:** Python `unittest`
+
+## Requirements
+
+- Python 3.10 or later
+- Windows PowerShell or another terminal
+- A modern web browser
+
+## Run Locally
+
+### 1. Clone or download the repository
+
+Open a terminal in the project directory.
+
+### 2. Create a virtual environment
+
+```powershell
 python -m venv venv
+```
 
-3. Activate the Virtual Environment
+### 3. Activate the virtual environment
 
+```powershell
 .\venv\Scripts\Activate.ps1
+```
 
-4. Install Dependencies
+If PowerShell blocks script execution, use Command Prompt and activate the environment with:
 
-pip install -r requirements.txt
+```bat
+venv\Scripts\activate.bat
+```
 
-Ensure "requirements.txt" contains Flask and any other dependencies used by the project.
+### 4. Install dependencies
 
-Running the Application
+```powershell
+python -m pip install -r requirements.txt
+```
 
-1. Initialize the Database
+### 5. Start the application
 
-python database.py
-
-2. Start the Flask Server
-
+```powershell
 python app.py
+```
 
-3. Open the Dashboard
+### 6. Open LogLens
 
-Visit:
+Navigate to:
 
 http://127.0.0.1:5000
 
-Upload a ".log" or ".txt" file to view its analysis.
+The local SQLite database is created automatically when the application first runs.
 
-Supported Log Format
+## How to Use
 
-Log entries currently follow this format:
+1. Start LogLens and open the dashboard.
+2. Upload a `.log`, `.txt`, or `.out` file.
+3. Review the parsed entries and severity statistics.
+4. Search messages, filter by severity, and sort the results.
+5. Inspect error entries and repeated messages.
+6. Export the filtered results to CSV or JSON.
+7. Review recent analysis summaries when needed.
 
+## Supported Log Format
+
+LogLens recognizes entries in the following format:
+
+```text
 YYYY-MM-DD HH:MM:SS LEVEL Message text
+```
 
 Example:
 
-2026-10-08 10:00:00 INFO Application started
-2026-10-08 10:01:00 WARNING Memory usage is high
-2026-10-08 10:02:00 ERROR Database connection failed
-2026-10-08 10:03:00 DEBUG Checking database status
+```text
+2026-10-20 09:15:12 INFO Application started
+2026-10-20 09:15:18 DEBUG Loading configuration
+2026-10-20 09:15:25 WARNING Connection retry initiated
+2026-10-20 09:15:31 ERROR Database connection failed
+2026-10-20 09:15:45 ERROR Database connection failed
+```
 
-Supported severity levels:
+### Supported Severity Levels
 
-- "INFO"
-- "WARNING"
-- "ERROR"
-- "DEBUG"
+| Level | Description |
+|---|---|
+| `INFO` | General application events |
+| `WARNING` | Potential issues requiring attention |
+| `ERROR` | Errors that may require investigation |
+| `DEBUG` | Diagnostic information |
 
-Lines that do not match the parser's expected format may be skipped.
+## Log Processing Behavior
 
-Database
+- Only lines matching the supported log format are parsed.
+- Lines that do not match the expected format are skipped.
+- Uploaded files are limited to 10 MB.
+- The incident list displays up to 10 `ERROR` entries.
+- Repeated messages are identified by comparing their exact message text.
+- Search, filtering, sorting, and pagination help navigate parsed entries.
+- Export operations include the currently filtered results.
+- Recent analysis history stores summary counts.
+- The currently selected file's entries are available for the current browser session.
 
-LogLens uses SQLite to store analysis history.
+## Running Tests
 
-The "analysis_history" table stores:
+LogLens includes automated tests using Python's built-in `unittest` framework.
 
-- Uploaded filename
-- INFO count
-- WARNING count
-- ERROR count
-- DEBUG count
+Run the test suite from the project root:
 
-The database file, "loglens.db", is generated locally. It should not be committed to GitHub.
+```powershell
+python -m unittest discover -s tests -v
+```
 
-Add this entry to ".gitignore":
+The tests use a temporary database, so they do not modify your local analysis history.
 
-loglens.db
+## Local Data and Privacy
 
-Commit "database.py" to GitHub, but keep the generated database file local.
+LogLens is designed to analyze files locally.
 
-Current Limitations
+- The SQLite database is named `loglens.db`.
+- It is stored alongside `app.py`.
+- The database contains recent analysis summaries and parsed log entries.
+- Uploaded files are not saved as separate files.
+- The database is excluded from Git.
 
-- Each "ERROR" entry is currently treated as an incident.
-- Repeated-message grouping compares message text exactly.
-- The parser expects a specific timestamp and severity format.
-- The application is designed for local use and does not require AI APIs or cloud services.
+To clear local analysis history and stored entries, stop the application and delete `loglens.db`. The application will create a new database the next time it runs.
 
-Future Improvements
+**Important:** Deleting `loglens.db` permanently removes the analysis history and parsed entries stored in that database.
 
-- Add interactive search and severity filters to the dashboard.
-- Improve invalid-file handling and input validation.
-- Enhance the dashboard design and user experience.
-- Add automated tests for parsing, metrics, incident detection, and database operations.
+## Project Structure
+
+```text
+LogLens/
+├── app.py
+├── config.py
+├── database.py
+├── detector.py
+├── log_parser.py
+├── metrics.py
+├── requirements.txt
+├── README.md
+├── .gitignore
+├── templates/
+│   └── index.html
+├── static/
+│   └── styles.css
+├── screenshots/
+│   ├── dashboard.png
+│   ├── analysis.png
+│   └── search-and-filtering.png
+└── tests/
+```
+
+### Core Modules
+
+| File | Responsibility |
+|---|---|
+| `app.py` | Flask routes and dashboard |
+| `config.py` | Local runtime settings |
+| `database.py` | SQLite persistence and database operations |
+| `detector.py` | Error and incident detection |
+| `log_parser.py` | Log parsing, search, grouping, and sorting |
+| `metrics.py` | Severity counts and log statistics |
+| `templates/index.html` | Dashboard HTML template |
+| `static/styles.css` | Dashboard styling |
+| `tests/` | Automated test suite |
+
+## Design Goals
+
+- Keep log analysis local and straightforward.
+- Provide a clear interface for investigating application logs.
+- Make errors and repeated messages easier to identify.
+- Support practical filtering and exporting workflows.
+- Keep persistence lightweight with SQLite.
+- Maintain a testable, modular Python codebase.
+---
